@@ -18,9 +18,10 @@ class TagController
         $password = config('bendt-instagram.password');
 
         try {
-            $image_url = storage_path('app/public'.$post->image_url);
+            //$image_url = storage_path('app/public'.$post->image_url);
+            $image_url = $post->image_url;
             $content = TagService::compose($post);
-            
+
             $instagram = new InstaLite($username, $password, false);
             $instagram->uploadPhoto($image_url, $content, $post->alt);
 
