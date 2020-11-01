@@ -8,6 +8,8 @@ use Bendt\Instagram\Models\InstagramSchedulePost;
 use Bendt\Instagram\Models\InstagramPopularTag;
 use Bendt\Instagram\Models\InstagramGeneralTag;
 
+use Carbon\Carbon;
+
 
 class TagService
 {
@@ -116,7 +118,7 @@ class TagService
     }
 
     public static function getSchedulePost() {
-        return InstagramSchedulePost::where('is_posted',0)->orderBy('schedule_date')->first();
+        return InstagramSchedulePost::where('is_posted',0)->orderBy('schedule_date')->where('schedule_date','<=',Carbon::now())->first();
     }
 
     public static function getPopularTags() {
