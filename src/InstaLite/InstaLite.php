@@ -159,10 +159,11 @@ class InstaLite
      * @param string $photo  file patch __DIR__ . '/photo.jpg';
      * @param string $message  text message, hashtag
      * @param string $alt  alt message
+     * @param array  $tags  tag people //usertags: {"in":[{"user_id":"10364344342","position":[0.50,0.50]}]}
      * @throws
      * @return string|null return media id
      */
-    public function uploadPhoto(string $photo, string $message, string $alt = ''): ?string
+    public function uploadPhoto(string $photo, string $message, string $alt = '', $tags = []): ?string
     {
         if (!file_exists($photo)) {
             throw new Exception("File [$photo] not found");
@@ -190,7 +191,61 @@ class InstaLite
             throw new Exception("Error upload file: " . \json_encode($response));
         }
         $this->__log('upload file success: ' . \json_encode($response));
+
         $response = Request::post($this->web . 'create/configure/')
+            ->addHead('content-type', 'application/x-www-form-urlencoded')
+            ->addHead('user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_4_1 like Mac OS X; ru-RU) AppleWebKit/537.36 (KHTML, like Gecko)  Version/11.4.1 Mobile/15G77 Safari/537.36 Puffin/5.2.2IP')
+            ->addParam('upload_id', $response['upload_id'])
+            ->addParam('caption', $message)
+            ->addParam('usertags', json_encode($tags))
+            ->addParam('custom_accessibility_caption', $alt)
+            ->addParam('retry_timeout', '')
+            ->json(true);
+        if (!isset($response['media']['id']) && $response['status'] != 'ok') {
+            throw new Exception("Error save post: " . \json_encode($response));
+        }
+        $this->__log('save post success: ' . \json_encode($response));
+        return $response['media']['id'];
+    }
+
+    /**
+     * uploadStory Web interface
+     *
+     * @param string $photo  file patch __DIR__ . '/photo.jpg';
+     * @param string $message  text message, hashtag
+     * @param string $alt  alt message
+     * @throws
+     * @return string|null return media id
+     */
+    public function uploadStory(string $photo, string $message, string $alt = ''): ?string
+    {
+        if (!file_exists($photo)) {
+            throw new Exception("File [$photo] not found");
+        }
+        $photo_id = round(microtime(true) * 1000);
+        $file_temp = __DIR__ . '/' . $this->uuid4();
+        list($width, $height, $image_type) = getimagesize(realpath($photo));
+        $srcImage = ImageCreateFromJPEG($photo);
+        $resImage = ImageCreateTrueColor($width, $height);
+        ImageCopyResampled($resImage, $srcImage, 0, 0, 0, 0, $width, $height, $width, $height);
+        ImageJPEG($srcImage, $file_temp, 100);
+        ImageDestroy($srcImage);
+
+        $response = Request::post($this->web . 'rupload_igphoto/fb_uploader_' . $photo_id)
+            ->addHead('content-type', 'image/jpg')
+            ->addHead('x-entity-name', 'fb_uploader_' . $photo_id)
+            ->addHead('offset', 0)
+            ->addHead('user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_4_1 like Mac OS X; ru-RU) AppleWebKit/537.36 (KHTML, like Gecko)  Version/11.4.1 Mobile/15G77 Safari/537.36 Puffin/5.2.2IP')
+            ->addHead('x-entity-length', filesize($file_temp))
+            ->addHead('x-instagram-rupload-params', '{"media_type":1,"upload_id":"' . $photo_id . '","upload_media_height":' . $height . ',"upload_media_width":' . $width . '}')
+            ->addFile($file_temp)
+            ->json(true);
+        unlink($file_temp);
+        if (!isset($response['upload_id'], $response['status']) && $response['status'] != 'ok') {
+            throw new Exception("Error upload file: " . \json_encode($response));
+        }
+        $this->__log('upload file success: ' . \json_encode($response));
+        $response = Request::post($this->web . 'create/configure_to_story/')
             ->addHead('content-type', 'application/x-www-form-urlencoded')
             ->addHead('user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_4_1 like Mac OS X; ru-RU) AppleWebKit/537.36 (KHTML, like Gecko)  Version/11.4.1 Mobile/15G77 Safari/537.36 Puffin/5.2.2IP')
             ->addParam('upload_id', $response['upload_id'])
@@ -202,7 +257,7 @@ class InstaLite
         if (!isset($response['media']['id']) && $response['status'] != 'ok') {
             throw new Exception("Error save post: " . \json_encode($response));
         }
-        $this->__log('save post success: ' . \json_encode($response));
+        $this->__log('save story success: ' . \json_encode($response));
         return $response['media']['id'];
     }
 

@@ -44,6 +44,7 @@ class CreateInstagramGroupTables extends Migration
             $table->text('content')->nullable();
             $table->string('alt',1000)->nullable();
             $table->string('tags',1000)->nullable();
+            $table->string('usertags',1000)->nullable();
             $table->boolean('is_posted')->default(false);
             $table->timestamps();
         });

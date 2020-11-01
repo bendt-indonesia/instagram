@@ -37,7 +37,10 @@ class TagService
     public function processTags($tags) {
         $data = [];
         foreach ($tags as $row) {
-            $data[] = $this->chooseTag($row);
+            $tag = $this->chooseTag($row);
+            if($tag) {
+                $data[] = $tag;
+            }
         }
         return $data;
     }
@@ -119,7 +122,7 @@ class TagService
     public static function getPopularTags() {
         $data = InstagramPopularTag::all();
         $tags = [];
-        
+
         foreach ($data as $row) {
             $tags[] = [$row->hashtag,$row->chances];
         }
@@ -134,7 +137,7 @@ class TagService
         foreach ($data as $row) {
             $tags[] = [$row->hashtag,$row->chances];
         }
-        
+
         return $tags;
     }
 }
